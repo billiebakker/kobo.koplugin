@@ -1,6 +1,7 @@
 -- Kobo Kepub Metadata Parser
 -- Parses /mnt/onboard/.kobo/KoboReader.sqlite database
 
+local Archiver = require("ffi/archiver")
 local SQ3 = require("lua-ljsqlite3/init")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -310,42 +311,50 @@ function MetadataParser:isBookAccessible(book_id)
 end
 
 ---
--- Reads the first 4 bytes of a file to check for ZIP/EPUB signature.
--- EPUB files are ZIP archives starting with PK\x03\x04.
--- @param filepath string: Full path to the file.
--- @return boolean: True if file has valid ZIP signature (PK\x03\x04).
-local function hasValidZipSignature(filepath)
-    local file = io.open(filepath, "rb")
-    if not file then
-        return false
-    end
-
-    local header = file:read(4)
-    file:close()
-
-    if not header or #header < 4 then
-        return false
-    end
-
-    local pk_signature = header:byte(1) == 0x50 and header:byte(2) == 0x4B
-    local zip_signature = header:byte(3) == 0x03 and header:byte(4) == 0x04
-
-    return pk_signature and zip_signature
-end
-
----
--- Checks if a book file is likely encrypted or corrupted.
--- Uses basic heuristic: checks for valid ZIP/EPUB signature (PK\x03\x04).
--- Missing files or files without proper ZIP signature are considered encrypted.
+-- Checks if a book file is DRM-encrypted by examining rights.xml.
+-- Opens the book archive and checks for the presence of rights.xml with kdrm field.
+-- If rights.xml exists and contains a kdrm element, the book is considered encrypted.
+-- If the book file is missing or the archive cannot be opened, the book is also considered encrypted.
 -- @param book_id string: The book's ContentID.
--- @return boolean: True if the book appears to be encrypted or inaccessible.
+-- @return boolean: True if the book appears to be encrypted, is missing, or cannot be opened.
 function MetadataParser:isBookEncrypted(book_id)
+    logger.dbg("MetadataParser: checking if book is encrypted", book_id)
+
     local filepath = self:getBookFilePath(book_id)
     if not filepath then
+        logger.dbg("MetadataParser: book file not found", book_id)
         return true
     end
 
-    return not hasValidZipSignature(filepath)
+    local arc = Archiver.Reader:new()
+
+    if arc:open(filepath) then
+        local rights_xml_content = nil
+
+        for entry in arc:iterate() do
+            if entry.mode == "file" and entry.path == "rights.xml" then
+                rights_xml_content = arc:extractToMemory(entry.index)
+                break
+            end
+        end
+
+        arc:close()
+
+        if rights_xml_content and #rights_xml_content > 0 then
+            if rights_xml_content:find("<kdrm>") or rights_xml_content:find("<kdrm ") then
+                logger.dbg("MetadataParser: book is encrypted (DRM detected)", book_id)
+                return true
+            end
+        end
+
+        logger.dbg("MetadataParser: book is not encrypted (no DRM found)", book_id)
+
+        return false
+    end
+
+    logger.dbg("MetadataParser: could not open book archive", book_id)
+
+    return true
 end
 
 ---
