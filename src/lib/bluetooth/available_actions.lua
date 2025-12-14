@@ -24,13 +24,49 @@ local AVAILABLE_ACTIONS = {
         id = "decrease_font",
         title = _("Decrease Font Size"),
         event = "DecreaseFontSize",
+        args = 1,
         description = _("Make text smaller"),
+    },
+    {
+        id = "decrease_brightness",
+        title = _("Decrease Frontlight Brightness"),
+        event = "IncreaseFlIntensity",
+        args = -1,
+        description = _("Make the frontlight less bright"),
+    },
+    {
+        id = "decrease_warmth",
+        title = _("Decrease Frontlight Warmth"),
+        event = "IncreaseFlWarmth",
+        args = -1,
+        description = _("Make the frontlight less warm"),
+    },
+    {
+        id = "enter_sleep",
+        title = _("Enter Sleep"),
+        event = "RequestSuspend",
+        description = _("Put the device to sleep"),
     },
     {
         id = "increase_font",
         title = _("Increase Font Size"),
         event = "IncreaseFontSize",
+        args = 1,
         description = _("Make text larger"),
+    },
+    {
+        id = "increase_brightness",
+        title = _("Increase Frontlight Brightness"),
+        event = "IncreaseFlIntensity",
+        args = 1,
+        description = _("Make the frontlight brighter"),
+    },
+    {
+        id = "increase_warmth",
+        title = _("Increase Frontlight Warmth"),
+        event = "IncreaseFlWarmth",
+        args = 1,
+        description = _("Make the frontlight warmer"),
     },
     {
         id = "next_chapter",
@@ -75,6 +111,12 @@ local AVAILABLE_ACTIONS = {
         title = _("Toggle Frontlight"),
         event = "ToggleFrontlight",
         description = _("Turn frontlight on/off"),
+    },
+    {
+        id = "toggle_night_mode",
+        title = _("Toggle Night Mode"),
+        event = "ToggleNightMode",
+        description = _("Turn nightmode on/off"),
     },
 }
 
