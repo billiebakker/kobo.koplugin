@@ -24,12 +24,14 @@ local AVAILABLE_ACTIONS = {
         id = "decrease_font",
         title = _("Decrease Font Size"),
         event = "DecreaseFontSize",
+        args = 1,
         description = _("Make text smaller"),
     },
     {
         id = "increase_font",
         title = _("Increase Font Size"),
         event = "IncreaseFontSize",
+        args = 1,
         description = _("Make text larger"),
     },
     {
